@@ -461,8 +461,8 @@ async function run(symbols) {
   );
 
   const fs = await import("fs");
-  fs.writeFileSync("results.json", JSON.stringify(results, null, 2));
-  console.log("Wrote results.json — paste its contents into the dashboard canvas to visualize.\n");
+  fs.writeFileSync("docs/results.json", JSON.stringify(results, null, 2));
+  console.log("Wrote docs/results.json\n");
 }
 
 const symbols = process.argv.length > 2 ? process.argv.slice(2) : DEFAULT_UNIVERSE;
