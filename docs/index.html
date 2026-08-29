@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leveraged ETF Signal Dashboard</title>
+<style>
+  :root {
+    --bg: #0f1115; --surface: #171a21; --surface2: #1e222b; --border: #2a2f3a;
+    --text: #e6e8eb; --muted: #9aa1ac; --green: #16a34a; --greenbg: #052e17;
+    --amber: #d97706; --amberbg: #2e2205; --red: #dc2626; --redbg: #2e0a0a;
+  }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; padding: 24px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin: 0 0 20px; }
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 12px; margin-bottom: 24px; max-width: 900px; }
+  .summary div { background: var(--surface); border-radius: 10px; padding: 14px; }
+  .summary p.label { font-size: 12px; color: var(--muted); margin: 0 0 4px; }
+  .summary p.value { font-size: 22px; font-weight: 600; margin: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 12px; max-width: 1200px; }
+  .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .symbol { font-weight: 600; font-size: 15px; margin: 0; }
+  .tracks { font-size: 12px; color: var(--muted); margin: 0; }
+  .badge { font-size: 11px; padding: 4px 10px; border-radius: 6px; white-space: nowrap; }
+  .action { font-size: 14px; font-weight: 600; margin: 0 0 10px; padding: 8px 10px; background: var(--surface); border-radius: 8px; }
+  .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 12px 0; padding: 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .stats p.label { font-size: 10px; color: var(--muted); margin: 0; }
+  .stats p.value { font-size: 14px; font-weight: 600; margin: 0; }
+  .reasons { margin: 0 0 10px; padding-left: 16px; font-size: 12px; color: var(--muted); }
+  .reasons li { margin-bottom: 2px; }
+  .levels { display: flex; gap: 8px; }
+  .levels > div { flex: 1; border-radius: 8px; padding: 6px 10px; }
+  .levels p.label { font-size: 10px; margin: 0; }
+  .levels p.value { font-size: 13px; font-weight: 600; margin: 0; }
+  #status { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+  <h1>Leveraged ETF Signal Dashboard</h1>
+  <p class="sub" id="status">Loading results.json...</p>
+  <div class="summary" id="summaryRow" style="display:none;"></div>
+  <div class="grid" id="cardsGrid"></div>
+
+<script>
+function badgeStyle(signal) {
+  if (signal === "ENTRY") return { bg: "var(--greenbg)", text: "var(--green)", label: "Buy signal" };
+  if (signal === "CAUTION") return { bg: "var(--amberbg)", text: "var(--amber)", label: "Caution" };
+  if (signal === "AVOID") return { bg: "var(--redbg)", text: "var(--red)", label: "Avoid" };
+  return { bg: "var(--surface)", text: "var(--muted)", label: "Stay out" };
+}
+function fmtPct(v) { return v == null ? "n/a" : Math.round(v * 10) / 10 + "%"; }
+function fmtR(v) { return v == null ? "n/a" : (Math.round(v * 100) / 100).toFixed(2); }
+
+function renderSummary(data) {
+  const withStats = data.filter(d => d.winRate != null);
+  const el = document.getElementById("summaryRow");
+  if (withStats.length === 0) { el.style.display = "none"; return; }
+  const avgWin = withStats.reduce((s,d) => s + d.winRate, 0) / withStats.length;
+  const avgRR = withStats.reduce((s,d) => s + (d.rewardRisk || 0), 0) / withStats.length;
+  const totalTrades = withStats.reduce((s,d) => s + (d.numTrades || 0), 0);
+  el.style.display = "grid";
+  el.innerHTML =
+    '<div><p class="label">Avg win rate</p><p class="value">' + fmtPct(avgWin) + '</p></div>' +
+    '<div><p class="label">Avg reward/risk</p><p class="value">' + fmtR(avgRR) + '</p></div>' +
+    '<div><p class="label">Total backtested trades</p><p class="value">' + totalTrades + '</p></div>';
+}
+
+function renderCards(data) {
+  const grid = document.getElementById("cardsGrid");
+  grid.innerHTML = "";
+  data.forEach(d => {
+    const b = badgeStyle(d.signal);
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML =
+      '<div class="card-top"><div><p class="symbol">' + d.symbol + '</p><p class="tracks">tracks ' + d.underlying + ' · $' + d.etfPrice + '</p></div>' +
+      '<span class="badge" style="background:' + b.bg + ';color:' + b.text + ';">' + b.label + '</span></div>' +
+      '<p class="action">' + d.action + '</p>' +
+      '<div class="stats"><div><p class="label">Win rate</p><p class="value">' + fmtPct(d.winRate) + '</p></div>' +
+      '<div><p class="label">Reward/risk</p><p class="value">' + fmtR(d.rewardRisk) + '</p></div>' +
+      '<div><p class="label">Trades</p><p class="value">' + (d.numTrades == null ? "n/a" : d.numTrades) + '</p></div></div>' +
+      '<p style="font-size:12px;color:var(--muted);margin:0 0 4px;">' + d.underlying + ' trend ' + d.underlyingTrend + ' · ADX ' + d.underlyingAdx + ' · RSI ' + d.underlyingRsi + '</p>' +
+      '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;">Vol vs 20d avg: ' + d.etfVolumeVsAvg + '</p>' +
+      '<ul class="reasons">' + d.reasons.map(r => '<li>' + r + '</li>').join("") + '</ul>' +
+      '<div class="levels">' +
+        '<div style="background:var(--redbg);"><p class="label" style="color:var(--red);">Stop-loss</p><p class="value" style="color:var(--red);">$' + d.stopLoss + ' (' + d.stopLossPct + '%)</p></div>' +
+        '<div style="background:var(--greenbg);"><p class="label" style="color:var(--green);">Take-profit</p><p class="value" style="color:var(--green);">$' + d.takeProfit + ' (+' + d.takeProfitPct + '%)</p></div>' +
+      '</div>';
+    grid.appendChild(card);
+  });
+}
+
+fetch("results.json?t=" + Date.now())
+  .then(r => {
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return r.json();
+  })
+  .then(data => {
+    document.getElementById("status").textContent =
+      data.length + " symbols · updated automatically every 30 minutes on market days";
+    renderSummary(data);
+    renderCards(data);
+  })
+  .catch(err => {
+    document.getElementById("status").textContent =
+      "Could not load results.json yet (" + err.message + "). It's created by the scheduled GitHub Action — check back after the first run, or trigger it manually from the Actions tab.";
+  });
+</script>
+</body>
+</html>
