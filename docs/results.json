@@ -18,6 +18,9 @@
       "LABU volume confirms liquidity"
     ],
     "stopLoss": "245.77",
+    "takeProfit": "370.74",
+    "stopLossPct": "-16.9",
+    "takeProfitPct": "25.4",
     "winRate": 27.3,
     "rewardRisk": 2.52,
     "numTrades": 33
@@ -41,6 +44,9 @@
       "FNGU volume confirms liquidity"
     ],
     "stopLoss": "30.81",
+    "takeProfit": "37.81",
+    "stopLossPct": "-8.3",
+    "takeProfitPct": "12.5",
     "winRate": 58.3,
     "rewardRisk": 1.73,
     "numTrades": 12
@@ -63,6 +69,9 @@
       "Chop is where leveraged ETFs decay fastest — avoid holding here"
     ],
     "stopLoss": "23.38",
+    "takeProfit": "26.08",
+    "stopLossPct": "-4.4",
+    "takeProfitPct": "6.6",
     "winRate": 13.3,
     "rewardRisk": 0.63,
     "numTrades": 15
@@ -85,6 +94,9 @@
       "Chop is where leveraged ETFs decay fastest — avoid holding here"
     ],
     "stopLoss": "145.26",
+    "takeProfit": "161.55",
+    "stopLossPct": "-4.3",
+    "takeProfitPct": "6.4",
     "winRate": 61.1,
     "rewardRisk": 2.14,
     "numTrades": 36
@@ -107,6 +119,9 @@
       "Chop is where leveraged ETFs decay fastest — avoid holding here"
     ],
     "stopLoss": "277.67",
+    "takeProfit": "308.84",
+    "stopLossPct": "-4.3",
+    "takeProfitPct": "6.4",
     "winRate": 61.1,
     "rewardRisk": 2.2,
     "numTrades": 36
@@ -129,6 +144,9 @@
       "Chop is where leveraged ETFs decay fastest — avoid holding here"
     ],
     "stopLoss": "29.81",
+    "takeProfit": "33.61",
+    "stopLossPct": "-4.9",
+    "takeProfitPct": "7.3",
     "winRate": 21.4,
     "rewardRisk": 0.58,
     "numTrades": 28
@@ -151,6 +169,9 @@
       "Chop is where leveraged ETFs decay fastest — avoid holding here"
     ],
     "stopLoss": "66.43",
+    "takeProfit": "79.98",
+    "stopLossPct": "-7.5",
+    "takeProfitPct": "11.3",
     "winRate": 56.1,
     "rewardRisk": 1.54,
     "numTrades": 41
@@ -173,6 +194,9 @@
       "Chop is where leveraged ETFs decay fastest — avoid holding here"
     ],
     "stopLoss": "35.55",
+    "takeProfit": "43.02",
+    "stopLossPct": "-7.7",
+    "takeProfitPct": "11.6",
     "winRate": 17.6,
     "rewardRisk": 0.53,
     "numTrades": 17
@@ -195,6 +219,9 @@
       "Chop is where leveraged ETFs decay fastest — avoid holding here"
     ],
     "stopLoss": "86.62",
+    "takeProfit": "148.42",
+    "stopLossPct": "-22.2",
+    "takeProfitPct": "33.3",
     "winRate": 45.7,
     "rewardRisk": 2.88,
     "numTrades": 35
@@ -217,6 +244,9 @@
       "Chop is where leveraged ETFs decay fastest — avoid holding here"
     ],
     "stopLoss": "40.67",
+    "takeProfit": "63.55",
+    "stopLossPct": "-18.4",
+    "takeProfitPct": "27.6",
     "winRate": 27.8,
     "rewardRisk": 0.53,
     "numTrades": 18
