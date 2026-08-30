@@ -39,14 +39,24 @@
 <body>
   <h1>Leveraged ETF Signal Dashboard</h1>
   <p class="sub" id="status">Loading results.json...</p>
+
+  <div style="background: var(--surface); border-radius: 10px; padding: 16px 18px; max-width: 420px; margin-bottom: 24px;">
+    <p style="margin: 0 0 8px; font-size: 14px; font-weight: 600;">Get an email when a buy signal appears</p>
+    <!-- Replace the src below with your own Google Form's embed URL (see setup steps) -->
+    <iframe src="https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform?embedded=true"
+            width="100%" height="220" frameborder="0" style="border-radius:8px;">
+      Loading sign-up form...
+    </iframe>
+  </div>
+
   <div class="summary" id="summaryRow" style="display:none;"></div>
   <div class="grid" id="cardsGrid"></div>
 
 <script>
 function badgeStyle(signal) {
-  if (signal === "ENTRY") return { bg: "var(--greenbg)", text: "var(--green)", label: "Buy signal" };
-  if (signal === "CAUTION") return { bg: "var(--amberbg)", text: "var(--amber)", label: "Caution" };
-  if (signal === "AVOID") return { bg: "var(--redbg)", text: "var(--red)", label: "Avoid" };
+  if (signal.startsWith("ENTRY")) return { bg: "var(--greenbg)", text: "var(--green)", label: "Buy signal" };
+  if (signal.startsWith("CAUTION") || signal.startsWith("TREND CONFIRMED")) return { bg: "var(--amberbg)", text: "var(--amber)", label: "Caution" };
+  if (signal.startsWith("AVOID")) return { bg: "var(--redbg)", text: "var(--red)", label: "Avoid" };
   return { bg: "var(--surface)", text: "var(--muted)", label: "Stay out" };
 }
 function fmtPct(v) { return v == null ? "n/a" : Math.round(v * 10) / 10 + "%"; }
