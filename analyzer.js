@@ -288,9 +288,13 @@ function buildSignal(etfSymbol, meta, underlyingTrend, etfBars) {
   }
 
   const stopDistance = etfATR * 2; // 2x ATR default stop
+  const targetDistance = etfATR * 3; // 3x ATR target -> 1.5:1 reward:risk
   // Every entry here is BUY / LONG the ETF itself (bull ETF for bullish exposure,
   // bear/inverse ETF for bearish exposure) — this strategy never shorts the ETF.
   const stopLoss = (etfPrice - stopDistance).toFixed(2);
+  const takeProfit = (etfPrice + targetDistance).toFixed(2);
+  const stopLossPct = (((etfPrice - stopDistance) - etfPrice) / etfPrice * 100).toFixed(1);
+  const takeProfitPct = (((etfPrice + targetDistance) - etfPrice) / etfPrice * 100).toFixed(1);
   const action = signal.startsWith("ENTRY")
     ? `BUY / LONG ${etfSymbol}`
     : signal.startsWith("CAUTION") || signal.startsWith("TREND CONFIRMED")
@@ -312,6 +316,9 @@ function buildSignal(etfSymbol, meta, underlyingTrend, etfBars) {
     action,
     reasons,
     stopLoss,
+    takeProfit,
+    stopLossPct,
+    takeProfitPct,
     // filled in by the runner after backtest() runs:
     winRate: null,
     rewardRisk: null,
@@ -445,7 +452,9 @@ async function run(symbols) {
     console.log(`SIGNAL: ${r.signal}`);
     console.log(`ACTION: ${r.action}`);
     r.reasons.forEach((line) => console.log(`  - ${line}`));
-    console.log(`Suggested stop-loss: $${r.stopLoss}`);
+    console.log(
+      `Suggested stop-loss: $${r.stopLoss} (${r.stopLossPct}%)   take-profit: $${r.takeProfit} (+${r.takeProfitPct}%)`
+    );
     console.log(
       `Backtest (5y): win rate ${r.winRate == null ? "n/a" : r.winRate + "%"}   ` +
         `reward/risk ${r.rewardRisk == null ? "n/a" : r.rewardRisk}   ` +
