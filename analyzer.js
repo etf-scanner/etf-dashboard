@@ -80,7 +80,6 @@ async function fetchDailyBars(symbol, range = "max", retries = 2) {
 
       const timestamps = result.timestamp;
       const quote = result.indicators.quote[0];
-      const adjClose = result.indicators.adjclose?.[0]?.adjclose;
 
       const bars = timestamps
         .map((t, i) => ({
@@ -88,7 +87,12 @@ async function fetchDailyBars(symbol, range = "max", retries = 2) {
           open: quote.open[i],
           high: quote.high[i],
           low: quote.low[i],
-          close: adjClose ? adjClose[i] : quote.close[i],
+          // Use raw close (not split-adjusted) so open/high/low/close stay
+          // internally consistent. Mixing adjusted close with unadjusted
+          // high/low caused a massive scale mismatch on symbols with reverse
+          // splits (common for leveraged/inverse ETFs), which blew up ATR
+          // and produced nonsense stop-loss/take-profit levels.
+          close: quote.close[i],
           volume: quote.volume[i],
         }))
         .filter((b) => b.close != null && b.high != null && b.low != null);
