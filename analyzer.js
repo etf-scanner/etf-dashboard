@@ -59,7 +59,7 @@ const DEFAULT_UNIVERSE = Object.keys(ETF_MAP);
 // ---------------------------------------------------------------------------
 // 2. Data fetching — Yahoo Finance public chart endpoint (real market data)
 // ---------------------------------------------------------------------------
-async function fetchDailyBars(symbol, range = "5y", retries = 2) {
+async function fetchDailyBars(symbol, range = "max", retries = 2) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
     symbol
   )}?range=${range}&interval=1d`;
@@ -343,7 +343,9 @@ function backtest(meta, underlyingBars, etfBars) {
 
   const trades = [];
   let inTrade = false;
-  let entryIdxEtf = null;
+  let entryPrice = null;
+  let stopPrice = null;
+  let targetPrice = null;
 
   for (let i = 50; i < underlyingBars.length; i++) {
     if (ema20[i] == null || ema50[i] == null || adxLine[i] == null || rsi14[i] == null) continue;
@@ -354,22 +356,44 @@ function backtest(meta, underlyingBars, etfBars) {
     const rsiExtreme = wantsUp ? rsi14[i] >= 70 : rsi14[i] <= 30;
     const etfIdx = etfDateIdx.get(underlyingBars[i].date);
     if (etfIdx == null) continue;
+    const bar = etfBars[etfIdx];
 
     if (!inTrade) {
       if (isTrending && favors && !rsiExtreme) {
         inTrade = true;
-        entryIdxEtf = etfIdx;
+        entryPrice = bar.close;
+        const atrAtEntry = etfAtr14[etfIdx] || 0.01;
+        stopPrice = entryPrice - 2 * atrAtEntry; // matches the live 2x ATR stop
+        targetPrice = entryPrice + 3 * atrAtEntry; // matches the live 3x ATR target
       }
-    } else {
-      const shouldExit = !isTrending || direction !== (wantsUp ? "UP" : "DOWN");
-      if (shouldExit) {
-        const entryPrice = etfBars[entryIdxEtf].close;
-        const exitPrice = etfBars[etfIdx].close;
-        const entryRisk = 2 * (etfAtr14[entryIdxEtf] || etfAtr14[entryIdxEtf + 1] || 0.01);
-        const reward = exitPrice - entryPrice;
-        trades.push({ reward, r: reward / entryRisk });
-        inTrade = false;
-      }
+      continue;
+    }
+
+    // In a trade: check whether that day's real high/low actually touched the
+    // stop or target BEFORE falling back to a trend-reversal exit. This is
+    // what makes the backtest match the stop-loss/take-profit shown live —
+    // earlier versions ignored these levels entirely and only used trend exits.
+    const riskUnit = entryPrice - stopPrice; // = 2x ATR at entry
+    const hitStop = bar.low <= stopPrice;
+    const hitTarget = bar.high >= targetPrice;
+
+    if (hitStop && hitTarget) {
+      // Both touched same day — can't know which came first without intraday
+      // data, so conservatively assume the stop hit first (avoids overstating
+      // performance).
+      trades.push({ reward: stopPrice - entryPrice, r: -1 });
+      inTrade = false;
+    } else if (hitStop) {
+      trades.push({ reward: stopPrice - entryPrice, r: -1 });
+      inTrade = false;
+    } else if (hitTarget) {
+      trades.push({ reward: targetPrice - entryPrice, r: 1.5 });
+      inTrade = false;
+    } else if (!isTrending || direction !== (wantsUp ? "UP" : "DOWN")) {
+      const exitPrice = bar.close;
+      const reward = exitPrice - entryPrice;
+      trades.push({ reward, r: reward / riskUnit });
+      inTrade = false;
     }
   }
 
@@ -409,7 +433,7 @@ async function run(symbols) {
     const meta = ETF_MAP[symbol];
     try {
       if (!underlyingCache.has(meta.underlying)) {
-        const bars = await fetchDailyBars(meta.underlying, "5y");
+        const bars = await fetchDailyBars(meta.underlying, "max");
         underlyingCache.set(meta.underlying, bars);
       }
       const underlyingBars = underlyingCache.get(meta.underlying);
@@ -419,7 +443,7 @@ async function run(symbols) {
       }
       const underlyingTrend = readUnderlyingTrend(underlyingBars);
 
-      const etfBars = await fetchDailyBars(symbol, "5y");
+      const etfBars = await fetchDailyBars(symbol, "max");
       if (etfBars.length < 30) {
         console.log(`${symbol}: not enough history, skipping`);
         continue;
@@ -456,7 +480,7 @@ async function run(symbols) {
       `Suggested stop-loss: $${r.stopLoss} (${r.stopLossPct}%)   take-profit: $${r.takeProfit} (+${r.takeProfitPct}%)`
     );
     console.log(
-      `Backtest (5y): win rate ${r.winRate == null ? "n/a" : r.winRate + "%"}   ` +
+      `Backtest (full history): win rate ${r.winRate == null ? "n/a" : r.winRate + "%"}   ` +
         `reward/risk ${r.rewardRisk == null ? "n/a" : r.rewardRisk}   ` +
         `trades ${r.numTrades}`
     );
@@ -464,7 +488,7 @@ async function run(symbols) {
   console.log("─".repeat(70));
   console.log(
     "\nData source: Yahoo Finance public chart API (live daily bars, unofficial endpoint).\n" +
-      "Backtest replays the same entry/exit rules over the last 5 years of REAL price data.\n" +
+      "Backtest replays the same entry/exit rules over the full available REAL price history for each symbol (as far back as Yahoo has it — often 10-15+ years for older ETFs).\n" +
       "Reminder: leveraged ETFs are built for short-term tactical trades, not buy-and-hold.\n" +
       "This is a technical framework, not financial advice — confirm with your own risk rules.\n"
   );
