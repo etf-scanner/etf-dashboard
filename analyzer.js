@@ -51,7 +51,19 @@ const ETF_MAP = {
   TECL: { underlying: "XLK", leverage: 3, name: "Technology 3x Bull" },
   TECS: { underlying: "XLK", leverage: -3, name: "Technology 3x Bear" },
   TMF: { underlying: "TLT", leverage: 3, name: "20+ Yr Treasury 3x Bull" },
+  TMV: { underlying: "TLT", leverage: -3, name: "20+ Yr Treasury 3x Bear" },
   FNGU: { underlying: "FNGS", leverage: 3, name: "FANG+ 3x Bull" },
+  UDOW: { underlying: "DIA", leverage: 3, name: "Dow Jones 3x Bull" },
+  SDOW: { underlying: "DIA", leverage: -3, name: "Dow Jones 3x Bear" },
+  YINN: { underlying: "FXI", leverage: 3, name: "China 3x Bull" },
+  YANG: { underlying: "FXI", leverage: -3, name: "China 3x Bear" },
+  NUGT: { underlying: "GDX", leverage: 3, name: "Gold Miners 3x Bull" },
+  DUST: { underlying: "GDX", leverage: -3, name: "Gold Miners 3x Bear" },
+  DRN: { underlying: "IYR", leverage: 3, name: "Real Estate 3x Bull" },
+  DRV: { underlying: "IYR", leverage: -3, name: "Real Estate 3x Bear" },
+  ERX: { underlying: "XLE", leverage: 3, name: "Energy 3x Bull" },
+  ERY: { underlying: "XLE", leverage: -3, name: "Energy 3x Bear" },
+  CURE: { underlying: "XLV", leverage: 3, name: "Healthcare 3x Bull" },
 };
 
 const DEFAULT_UNIVERSE = Object.keys(ETF_MAP);
