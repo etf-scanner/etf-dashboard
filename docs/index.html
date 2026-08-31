@@ -78,9 +78,11 @@ function renderCards(data) {
       '<div class="card-top"><div><p class="symbol">' + d.symbol + '</p><p class="tracks">tracks ' + d.underlying + ' · $' + d.etfPrice + '</p></div>' +
       '<span class="badge" style="background:' + b.bg + ';color:' + b.text + ';">' + b.label + '</span></div>' +
       '<p class="action">' + d.action + '</p>' +
-      '<div class="stats"><div><p class="label">Win rate</p><p class="value">' + fmtPct(d.winRate) + '</p></div>' +
-      '<div><p class="label">Reward/risk</p><p class="value">' + fmtR(d.rewardRisk) + '</p></div>' +
-      '<div><p class="label">Trades</p><p class="value">' + (d.numTrades == null ? "n/a" : d.numTrades) + '</p></div></div>' +
+      (d.stopLoss != null
+        ? '<div class="stats"><div><p class="label">Win rate</p><p class="value">' + fmtPct(d.winRate) + '</p></div>' +
+          '<div><p class="label">Reward/risk</p><p class="value">' + fmtR(d.rewardRisk) + '</p></div>' +
+          '<div><p class="label">Trades</p><p class="value">' + (d.numTrades == null ? "n/a" : d.numTrades) + '</p></div></div>'
+        : '') +
       '<p style="font-size:12px;color:var(--muted);margin:0 0 4px;">' + d.underlying + ' trend ' + d.underlyingTrend + ' · ADX ' + d.underlyingAdx + ' · RSI ' + d.underlyingRsi + '</p>' +
       '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;">Vol vs 20d avg: ' + d.etfVolumeVsAvg + '</p>' +
       '<ul class="reasons">' + d.reasons.map(r => '<li>' + r + '</li>').join("") + '</ul>' +
@@ -89,7 +91,7 @@ function renderCards(data) {
           '<div style="background:var(--redbg);"><p class="label" style="color:var(--red);">Stop-loss</p><p class="value" style="color:var(--red);">$' + d.stopLoss + ' (' + d.stopLossPct + '%)</p></div>' +
           '<div style="background:var(--greenbg);"><p class="label" style="color:var(--green);">Take-profit</p><p class="value" style="color:var(--green);">$' + d.takeProfit + ' (+' + d.takeProfitPct + '%)</p></div>' +
           '</div>'
-        : '<p style="font-size:11px;color:var(--muted);margin:0;">No stop-loss/take-profit — not an active buy signal</p>');
+        : '<p style="font-size:11px;color:var(--muted);margin:0;">No stats shown — not an active buy signal right now</p>');
     grid.appendChild(card);
   });
 }
