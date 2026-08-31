@@ -95,7 +95,21 @@ async function fetchDailyBars(symbol, range = "max", retries = 2) {
           close: quote.close[i],
           volume: quote.volume[i],
         }))
-        .filter((b) => b.close != null && b.high != null && b.low != null);
+        .filter((b) => b.close != null && b.high != null && b.low != null && b.open != null)
+        // Hard sanity check: a bar's close (and open) must fall within its own
+        // high/low — if not, that's corrupted data (a known issue with free
+        // historical feeds, especially for thinly-tracked, heavily
+        // reverse-split ETPs). One bad tick like this can blow up ATR for a
+        // long time afterward via its smoothing, so we drop it outright
+        // rather than let a single garbage row poison the whole calculation.
+        .filter(
+          (b) =>
+            b.high >= b.low &&
+            b.close <= b.high * 1.01 &&
+            b.close >= b.low * 0.99 &&
+            b.open <= b.high * 1.01 &&
+            b.open >= b.low * 0.99
+        );
 
       if (bars.length === 0) throw new Error("empty bar set");
       return bars;
@@ -291,14 +305,17 @@ function buildSignal(etfSymbol, meta, underlyingTrend, etfBars) {
     reasons.push(`Consider the opposite leg instead if you want exposure to this trend`);
   }
 
+  const isBuy = signal.startsWith("ENTRY");
   const stopDistance = etfATR * 2; // 2x ATR default stop
   const targetDistance = etfATR * 3; // 3x ATR target -> 1.5:1 reward:risk
   // Every entry here is BUY / LONG the ETF itself (bull ETF for bullish exposure,
   // bear/inverse ETF for bearish exposure) — this strategy never shorts the ETF.
-  const stopLoss = (etfPrice - stopDistance).toFixed(2);
-  const takeProfit = (etfPrice + targetDistance).toFixed(2);
-  const stopLossPct = (((etfPrice - stopDistance) - etfPrice) / etfPrice * 100).toFixed(1);
-  const takeProfitPct = (((etfPrice + targetDistance) - etfPrice) / etfPrice * 100).toFixed(1);
+  // Stop-loss/take-profit only mean something if you're actually entering a
+  // trade, so leave them null on anything other than an active BUY signal.
+  const stopLoss = isBuy ? (etfPrice - stopDistance).toFixed(2) : null;
+  const takeProfit = isBuy ? (etfPrice + targetDistance).toFixed(2) : null;
+  const stopLossPct = isBuy ? (((etfPrice - stopDistance) - etfPrice) / etfPrice * 100).toFixed(1) : null;
+  const takeProfitPct = isBuy ? (((etfPrice + targetDistance) - etfPrice) / etfPrice * 100).toFixed(1) : null;
   const action = signal.startsWith("ENTRY")
     ? `BUY / LONG ${etfSymbol}`
     : signal.startsWith("CAUTION") || signal.startsWith("TREND CONFIRMED")
@@ -480,9 +497,11 @@ async function run(symbols) {
     console.log(`SIGNAL: ${r.signal}`);
     console.log(`ACTION: ${r.action}`);
     r.reasons.forEach((line) => console.log(`  - ${line}`));
-    console.log(
-      `Suggested stop-loss: $${r.stopLoss} (${r.stopLossPct}%)   take-profit: $${r.takeProfit} (+${r.takeProfitPct}%)`
-    );
+    if (r.stopLoss != null) {
+      console.log(
+        `Suggested stop-loss: $${r.stopLoss} (${r.stopLossPct}%)   take-profit: $${r.takeProfit} (+${r.takeProfitPct}%)`
+      );
+    }
     console.log(
       `Backtest (full history): win rate ${r.winRate == null ? "n/a" : r.winRate + "%"}   ` +
         `reward/risk ${r.rewardRisk == null ? "n/a" : r.rewardRisk}   ` +
